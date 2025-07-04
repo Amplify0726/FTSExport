@@ -704,7 +704,6 @@ def fetch_and_process_data(from_date, to_date, PPON):
                 awards_df.to_excel(writer, sheet_name='Awards', index=False)
             if not procurement_terminations_df.empty:
                 procurement_terminations_df.to_excel(writer, sheet_name='Procurement_Terminations', index=False)
-            writer.close()
         output.seek(0)
         latest_report_bytes = output.getvalue()
 
