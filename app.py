@@ -743,7 +743,7 @@ def fetch_and_process_data(from_date, to_date, PPON):
             closed_summary.columns = ['Range', 'Closed Unawarded Count']
         else:
             closed_summary = pd.DataFrame({'Range': closed_labels, 'Closed Unawarded Count': [0, 0, 0]})
-        Merge summaries for output
+        #Merge summaries for output
         summary = pd.merge(award_summary, closed_summary, on='Range', how='outer')
 
         output = BytesIO()
