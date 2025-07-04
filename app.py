@@ -146,19 +146,7 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
 
 def update_closed_unawarded_notices():
     try:
-        logger.info("Starting closed unawarded notices analysis...")
-        sh = gc.open(SPREADSHEET_NAME)
-        
-        # Get data from relevant sheets
-        tender_sheet = sh.worksheet("Tender_Notices")
-        award_notice_sheet = sh.worksheet("Award_Notices")
-        procurement_terminations_sheet = sh.worksheet("Procurement_Terminations")
-        closed_sheet = get_or_create_worksheet(sh, "Closed_Notices_Not_Awarded")
-
-        # Convert to dataframes
-        tender_df = pd.DataFrame(tender_sheet.get_all_records())
-        award_df = pd.DataFrame(award_notice_sheet.get_all_records())
-        procurement_terminations_df = pd.DataFrame(procurement_terminations_sheet.get_all_records())
+        logger.info("Updating closed unawarded notices")
 
         if tender_df.empty:
             logger.info("No tender notices found")
@@ -690,6 +678,51 @@ def fetch_and_process_data(from_date, to_date, PPON):
                     df[col] = df[col].apply(clean_value)
                     df[col] = df[col].replace([np.inf, -np.inf, np.nan], '')
 
+        # --- Begin closed unawarded logic ---
+        closed_unawarded_df = pd.DataFrame()
+        try:
+            logger.info("Analyzing closed unawarded notices")
+
+            if tender_df.empty:
+                logger.info("No tender notices found")
+            else:
+                uk4_notices = tender_df[tender_df['Notice Type'] == 'UK4'].copy()
+                if uk4_notices.empty:
+                    logger.info("No UK4 notices found")
+                else:
+                    latest_uk4 = uk4_notices.sort_values('Published Date').groupby('OCID').last()
+                    current_date = datetime.now(timezone.utc)
+                    closed_tenders = latest_uk4[
+                        pd.to_datetime(latest_uk4['Submission Deadline'], errors='coerce', utc=True) < current_date
+                    ]
+                    if not procurement_terminations_df.empty and 'OCID' in procurement_terminations_df.columns:
+                        terminated_ocids = set(procurement_terminations_df['OCID'].dropna())
+                        closed_tenders = closed_tenders[~closed_tenders.index.isin(terminated_ocids)]
+                        logger.info(f"Excluded {len(closed_tenders[closed_tenders.index.isin(terminated_ocids)])} closed tenders from terminated procurements")
+                    if closed_tenders.empty:
+                        logger.info("No closed tenders found")
+                    else:
+                        if award_df.empty:
+                            unawarded = closed_tenders
+                            logger.info("No award notices found - treating all closed tenders as unawarded")
+                        else:
+                            awarded_ocids = set(award_df[award_df['Notice Type'].isin(['UK6', 'UK7'])]['OCID'])
+                            unawarded = closed_tenders[~closed_tenders.index.isin(awarded_ocids)]
+                        closed_unawarded = unawarded.reset_index()[
+                            ['OCID', 'Notice Type', 'Notice Title', 'Submission Deadline', 'Published Date', 
+                            'Value ex VAT', 'Contracting Authority', 'Contact Name', 'Contact Email']
+                        ]
+                        closed_unawarded['Date Added to Report'] = current_date.strftime("%Y-%m-%dT%H:%M:%S%z")
+                        closed_unawarded['Days Since Closed'] = (
+                            current_date - pd.to_datetime(closed_unawarded['Submission Deadline'], errors='coerce', utc=True)
+                        ).dt.days
+                        closed_unawarded['Status'] = closed_unawarded['Days Since Closed'].apply(
+                            lambda x: "Recently Closed" if x <= 30 else "Overdue Award Notice"
+                        )
+                        closed_unawarded_df = closed_unawarded
+        except Exception as e:
+            logger.error(f"Error analyzing closed unawarded notices: {str(e)}")
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             if not planning_df.empty:
@@ -704,6 +737,8 @@ def fetch_and_process_data(from_date, to_date, PPON):
                 awards_df.to_excel(writer, sheet_name='Awards', index=False)
             if not procurement_terminations_df.empty:
                 procurement_terminations_df.to_excel(writer, sheet_name='Procurement_Terminations', index=False)
+            if not closed_unawarded_df.empty:
+                closed_unawarded_df.to_excel(writer, sheet_name='Closed_Unawarded_Notices', index=False)
         output.seek(0)
         latest_report_bytes = output.getvalue()
 
