@@ -774,31 +774,41 @@ def fetch_and_process_data(from_date, to_date, PPON):
                     'categories': ['Days_to_Award_Summary', 1, 0, 1, 0],  # Just first category
                     'values': ['Days_to_Award_Summary', 1, 1, 1, 1],     # Just first value
                     'fill': {'color': '#3498db'},  
+                    'data_labels': {'value': True},
                 })
 
                 chart1.add_series({
                     'name': '31-60 days',
                     'categories': ['Days_to_Award_Summary', 2, 0, 2, 0],  # Second category
                     'values': ['Days_to_Award_Summary', 2, 1, 2, 1],     # Second value
-                    'fill': {'color': '#2ecc71'},  
+                    'fill': {'color': '#2ecc71'}, 
+                    'data_labels': {'value': True}, 
                 })
 
                 chart1.add_series({
                     'name': '61-90 days',
                     'categories': ['Days_to_Award_Summary', 3, 0, 3, 0],  # Third category
                     'values': ['Days_to_Award_Summary', 3, 1, 3, 1],     # Third value
-                    'fill': {'color': '#f39c12'}, 
+                    'fill': {'color': '#f39c12'},
+                    'data_labels': {'value': True}, 
                 })
 
                 chart1.add_series({
                     'name': '90+ days',
                     'categories': ['Days_to_Award_Summary', 4, 0, 4, 0],  # Fourth category
                     'values': ['Days_to_Award_Summary', 4, 1, 4, 1],     # Fourth value
-                    'fill': {'color': '#e74c3c'},  
+                    'fill': {'color': '#e74c3c'},
+                    'data_labels': {'value': True},  
                 })
                 chart1.set_title({'name': 'Days to Award Distribution'})
                 chart1.set_x_axis({'name': 'Days to Award Range'})
-                chart1.set_y_axis({'name': 'Count', 'major_unit': 1})
+                chart1.set_y_axis({
+                    'name': 'Count',
+                    'major_unit': 1,
+                    'minor_unit': 1,
+                    'min': 0,
+                    'max': max(1, int(summary[['Award Count', 'Closed Unawarded Count']].max().max()))
+                })
                 chart1.set_style(10)
                 worksheet.insert_chart('E2', chart1)
 
@@ -808,32 +818,42 @@ def fetch_and_process_data(from_date, to_date, PPON):
                     'name': '0-30 days',
                     'categories': ['Days_to_Award_Summary', 1, 0, 1, 0],
                     'values': ['Days_to_Award_Summary', 1, 2, 1, 2],     # Column C values
-                    'fill': {'color': '#3498db'},  # Blue - Recently closed, still manageable
+                    'fill': {'color': '#3498db'},
+                    'data_labels': {'value': True}, 
                 })
 
                 chart2.add_series({
                     'name': '31-60 days',
                     'categories': ['Days_to_Award_Summary', 2, 0, 2, 0],
                     'values': ['Days_to_Award_Summary', 2, 2, 2, 2],
-                    'fill': {'color': '#2ecc71'},  # Green - Getting concerning
+                    'fill': {'color': '#2ecc71'},
+                    'data_labels': {'value': True}, 
                 })
 
                 chart2.add_series({
                     'name': '61-90 days',
                     'categories': ['Days_to_Award_Summary', 3, 0, 3, 0],
                     'values': ['Days_to_Award_Summary', 3, 2, 3, 2],
-                    'fill': {'color': '#f39c12'},  # Orange - Problematic delay
+                    'fill': {'color': '#f39c12'},
+                    'data_labels': {'value': True}, 
                 })
 
                 chart2.add_series({
                     'name': '90+ days',
                     'categories': ['Days_to_Award_Summary', 4, 0, 4, 0],
                     'values': ['Days_to_Award_Summary', 4, 2, 4, 2],
-                    'fill': {'color': '#e74c3c'},  # Red - Critical delay
+                    'fill': {'color': '#e74c3c'},
+                    'data_labels': {'value': True}, 
                 })
                 chart2.set_title({'name': 'Days Since Closed (Unawarded)'})
                 chart2.set_x_axis({'name': 'Days Since Closed Range'})
-                chart2.set_y_axis({'name': 'Count', 'major_unit': 1})
+                chart2.set_y_axis({
+                    'name': 'Count',
+                    'major_unit': 1,
+                    'minor_unit': 1,
+                    'min': 0,
+                    'max': max_y
+                })
                 chart2.set_style(10)
                 worksheet.insert_chart('E18', chart2)
         output.seek(0)
