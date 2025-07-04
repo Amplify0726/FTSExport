@@ -678,6 +678,8 @@ def fetch_and_process_data(from_date, to_date, PPON):
                     df[col] = df[col].apply(clean_value)
                     df[col] = df[col].replace([np.inf, -np.inf, np.nan], '')
 
+        
+
         # --- Begin closed unawarded logic ---
         closed_unawarded_df = pd.DataFrame()
         try:
@@ -723,6 +725,27 @@ def fetch_and_process_data(from_date, to_date, PPON):
         except Exception as e:
             logger.error(f"Error analyzing closed unawarded notices: {str(e)}")
 
+
+        award_days = pd.to_numeric(award_df['Days to Award'], errors='coerce').dropna()
+        award_bins = [0, 30, 60, np.inf]
+        award_labels = ['0-30', '31-60', '61+']
+        award_df['Days to Award Bin'] = pd.cut(award_days, bins=award_bins, labels=award_labels, right=True)
+        award_summary = award_df['Days to Award Bin'].value_counts().reindex(award_labels, fill_value=0).reset_index()
+        award_summary.columns = ['Range', 'Award Count']
+
+        # Days Since Closed summary (ignore blanks/non-numeric)
+        closed_days = pd.to_numeric(closed_unawarded_df['Days Since Closed'], errors='coerce').dropna() if not closed_unawarded_df.empty else pd.Series(dtype=float)
+        closed_bins = [0, 30, 60, np.inf]
+        closed_labels = ['0-30', '31-60', '61+']
+        if not closed_unawarded_df.empty:
+            closed_unawarded_df['Days Since Closed Bin'] = pd.cut(closed_days, bins=closed_bins, labels=closed_labels, right=True)
+            closed_summary = closed_unawarded_df['Days Since Closed Bin'].value_counts().reindex(closed_labels, fill_value=0).reset_index()
+            closed_summary.columns = ['Range', 'Closed Unawarded Count']
+        else:
+            closed_summary = pd.DataFrame({'Range': closed_labels, 'Closed Unawarded Count': [0, 0, 0]})
+        Merge summaries for output
+        summary = pd.merge(award_summary, closed_summary, on='Range', how='outer')
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             if not planning_df.empty:
@@ -739,6 +762,38 @@ def fetch_and_process_data(from_date, to_date, PPON):
                 procurement_terminations_df.to_excel(writer, sheet_name='Procurement_Terminations', index=False)
             if not closed_unawarded_df.empty:
                 closed_unawarded_df.to_excel(writer, sheet_name='Closed_Unawarded_Notices', index=False)
+            if not summary.empty:
+                summary.to_excel(writer, sheet_name='Days_to_Award_Summary', index=False)
+                workbook = writer.book
+                worksheet = writer.sheets['Days_to_Award_Summary']
+
+                # Bar chart for Days to Award
+                chart1 = workbook.add_chart({'type': 'column'})
+                chart1.add_series({
+                    'name': 'Award Count',
+                    'categories': ['Days_to_Award_Summary', 1, 0, 3, 0],
+                    'values':     ['Days_to_Award_Summary', 1, 1, 3, 1],
+                    'fill':       {'color': '#667eea'},
+                })
+                chart1.set_title({'name': 'Days to Award Distribution'})
+                chart1.set_x_axis({'name': 'Days to Award Range'})
+                chart1.set_y_axis({'name': 'Count'})
+                chart1.set_style(10)
+                worksheet.insert_chart('E2', chart1)
+
+                # Bar chart for Days Since Closed
+                chart2 = workbook.add_chart({'type': 'column'})
+                chart2.add_series({
+                    'name': 'Closed Unawarded Count',
+                    'categories': ['Days_to_Award_Summary', 1, 0, 3, 0],
+                    'values':     ['Days_to_Award_Summary', 1, 2, 3, 2],
+                    'fill':       {'color': '#eabf66'},
+                })
+                chart2.set_title({'name': 'Days Since Closed (Unawarded)'})
+                chart2.set_x_axis({'name': 'Days Since Closed Range'})
+                chart2.set_y_axis({'name': 'Count'})
+                chart2.set_style(10)
+                worksheet.insert_chart('E18', chart2)
         output.seek(0)
         latest_report_bytes = output.getvalue()
 
