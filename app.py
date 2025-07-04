@@ -768,6 +768,7 @@ def fetch_and_process_data(from_date, to_date, PPON):
                 worksheet = writer.sheets['Days_to_Award_Summary']
 
                 # Bar chart for Days to Award
+                chart1 = workbook.add_chart({'type': 'column'})
                 chart1.add_series({
                     'name': '0-30 days',
                     'categories': ['Days_to_Award_Summary', 1, 0, 1, 0],  # Just first category
