@@ -1,0 +1,7 @@
+Flask
+pandas
+requests
+openpyxl
+xlsxwriter
+numpy
+python-dateutil
