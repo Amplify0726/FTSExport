@@ -734,7 +734,7 @@ def run_job():
     
     from_date = request.args.get('from_date') or '2025-02-24T00:00:00'
     to_date = request.args.get('to_date') or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
-    PPON = request.args.get('PPON')
+    PPON = request.args.get('ppon')
 
     if not PPON:
         return jsonify({
