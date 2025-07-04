@@ -231,7 +231,7 @@
             </div>
 
             <div class="form-group">
-                <label for="ppon">PPON (Public Procurement Organisation Number):</label>
+                <label for="ppon">PPON (Procurement Project Officer Number):</label>
                 <input type="text" id="ppon" name="ppon" placeholder="Enter PPON" required>
             </div>
 
@@ -307,18 +307,8 @@
                 });
                 
                 if (response.ok) {
-                    const result = await response.text();
-                    
-                    // Hide loading
-                    loadingDiv.classList.remove('show');
-                    
-                    // Show success message
-                    statusMessage.className = 'status-message success';
-                    statusMessage.textContent = 'Data processing completed successfully!';
-                    statusMessage.style.display = 'block';
-                    
-                    // Show download section
-                    downloadSection.classList.add('show');
+                    // Job started successfully, now poll for completion
+                    await pollForCompletion();
                     
                 } else {
                     throw new Error(`Server responded with status: ${response.status}`);
@@ -340,6 +330,48 @@
             submitBtn.disabled = false;
             submitBtn.textContent = 'Start Data Fetch';
         });
+
+        // Function to poll for job completion
+        async function pollForCompletion() {
+            const maxAttempts = 120; // 10 minutes max (5 second intervals)
+            let attempts = 0;
+            
+            while (attempts < maxAttempts) {
+                try {
+                    // Check if report is ready by trying to access the download endpoint
+                    const response = await fetch('/download-report', {
+                        method: 'HEAD' // Just check if the resource exists
+                    });
+                    
+                    if (response.ok) {
+                        // Job completed successfully
+                        loadingDiv.classList.remove('show');
+                        
+                        statusMessage.className = 'status-message success';
+                        statusMessage.textContent = 'Data processing completed successfully!';
+                        statusMessage.style.display = 'block';
+                        
+                        downloadSection.classList.add('show');
+                        return;
+                    }
+                    
+                    // Wait 5 seconds before next attempt
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    attempts++;
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    attempts++;
+                }
+            }
+            
+            // Timeout reached
+            loadingDiv.classList.remove('show');
+            statusMessage.className = 'status-message error';
+            statusMessage.textContent = 'Request timed out. The process may still be running. Please try refreshing the page in a few minutes.';
+            statusMessage.style.display = 'block';
+        }
 
         // Add some input validation
         document.getElementById('from_date').addEventListener('change', function() {
