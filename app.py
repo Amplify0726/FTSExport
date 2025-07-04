@@ -768,6 +768,7 @@ def fetch_and_process_data(from_date, to_date, PPON):
                 worksheet = writer.sheets['Days_to_Award_Summary']
 
                 # Bar chart for Days to Award
+                max_y = max(1, int(summary[['Award Count', 'Closed Unawarded Count']].max().max()))
                 chart1 = workbook.add_chart({'type': 'column'})
                 chart1.add_series({
                     'name': '0-30 days',
