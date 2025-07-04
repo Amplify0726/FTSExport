@@ -5,3 +5,4 @@ openpyxl
 xlsxwriter
 numpy
 python-dateutil
+Unicorn
