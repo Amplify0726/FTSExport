@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import math
 import numpy as np
-import re
+from flask import render_template
 
 
 # Configure logging
@@ -794,6 +794,10 @@ def download_report():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+@app.route('/page')
+def main_page():
+    return render_template('index.html')
 
 if __name__ == '__main__':
     try:
