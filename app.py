@@ -31,7 +31,7 @@ app = Flask(__name__)
 # Flag to track if a job is currently running
 job_running = False
 last_run_time = None
-
+latest_report_bytes = None
 
     
 
@@ -104,9 +104,9 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
             # Filter for your organization
             org_releases = [
             r for r in releases 
-            if (r.get("buyer", {}).get("id") == MY_ORG_ID or 
+            if (r.get("buyer", {}).get("id") == PPON or 
                 (r.get("buyer", {}).get("id") is None and 
-                any(p.get("id") == MY_ORG_ID for p in r.get("parties", []))))
+                any(p.get("id") == PPON for p in r.get("parties", []))))
             ]
             logger.info(f"Page {page_count}: Found {len(org_releases)} releases for your organization out of {len(releases)} total")
             all_releases.extend(org_releases)
@@ -231,11 +231,11 @@ def update_closed_unawarded_notices():
 
 def fetch_and_process_data(from_date, to_date, PPON):
     global job_running, last_run_time
+    global latest_report_bytes
     latest_report_bytes = None
     
     # Set flag to indicate job is running
     job_running = True
-    global latest_report_bytes
     try:
 
         logger.info("Starting data fetch and processing job")
