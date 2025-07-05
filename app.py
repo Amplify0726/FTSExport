@@ -34,7 +34,7 @@ job_running = False
 last_run_time = None
 latest_report_bytes = None
 
-SECRET_PNON = "SHOWALL"   
+SECRET_PPON = "SHOWALL"   
 
 def get_to_date():
     """Get the to_date from metadata sheet B2, or current UTC time if blank/invalid"""
