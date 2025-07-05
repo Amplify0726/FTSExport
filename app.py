@@ -657,7 +657,7 @@ def fetch_and_process_data(from_date, to_date, PPON):
                             award_results.append(award_fields)
             except Exception as e:
                 ocid = release.get("ocid", "NO OCID") if isinstance(release, dict) else "NOT A DICT"
-                logger.error(f
+                logger.error(f"Error processing release idx={idx}, OCID={ocid}: {str(e)}")
                 continue        
 
         
