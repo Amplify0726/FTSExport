@@ -335,7 +335,7 @@ def fetch_and_process_data(from_date, to_date, PPON):
                                 else "N/A"
                             ),
                         "Procedure Type": release.get("tender", {}).get("procurementMethodDetails", "N/A"),
-                        "Procedure Description": release.get("tender", {}).get("procedure", {}).get("features", "N/A"),
+                        "Procedure Description": (release.get("tender", {}).get("procedure", {}).get("features", "N/A") if isinstance(release.get("tender", {}).get("procedure", {}), dict) else "N/A"),
                         "Contracting Authority": release.get("buyer", {}).get("name", "N/A"),
                         "PPON": release.get("buyer", {}).get("id", "N/A"),
                         "Contact Name": release.get("parties", [{}])[0].get("contactPoint", {}).get("name", "N/A"),
