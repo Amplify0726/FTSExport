@@ -34,7 +34,7 @@ job_running = False
 last_run_time = None
 latest_report_bytes = None
 
-    
+SECRET_PNON = "SHOWALL"   
 
 def get_to_date():
     """Get the to_date from metadata sheet B2, or current UTC time if blank/invalid"""
@@ -103,14 +103,17 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
                 break
                 
             # Filter for your organization
-            org_releases = [
-            r for r in releases 
-            if (r.get("buyer", {}).get("id") == PPON or 
-                (r.get("buyer", {}).get("id") is None and 
-                any(p.get("id") == PPON for p in r.get("parties", []))))
-            ]
-            logger.info(f"Page {page_count}: Found {len(org_releases)} releases for your organization out of {len(releases)} total")
-            all_releases.extend(org_releases)
+            if PPON != SECRET_PNON:
+                org_releases = [
+                r for r in releases 
+                if (r.get("buyer", {}).get("id") == PPON or 
+                    (r.get("buyer", {}).get("id") is None and 
+                    any(p.get("id") == PPON for p in r.get("parties", []))))
+                ]
+                logger.info(f"Page {page_count}: Found {len(org_releases)} releases for your organization out of {len(releases)} total")
+                all_releases.extend(org_releases)
+            else:
+                org_releases = releases
             
         
             # Check for next page
