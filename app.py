@@ -702,8 +702,9 @@ def fetch_and_process_data(from_date, to_date, PPON):
                     ]
                     if not procurement_terminations_df.empty and 'OCID' in procurement_terminations_df.columns:
                         terminated_ocids = set(procurement_terminations_df['OCID'].dropna())
+                        num_to_exclude = closed_tenders.index.isin(terminated_ocids).sum()
                         closed_tenders = closed_tenders[~closed_tenders.index.isin(terminated_ocids)]
-                        logger.info(f"Excluded {len(closed_tenders[closed_tenders.index.isin(terminated_ocids)])} closed tenders from terminated procurements")
+                        logger.info(f"Excluded {num_to_exclude} closed tenders from terminated procurements")
                     if closed_tenders.empty:
                         logger.info("No closed tenders found")
                     else:
