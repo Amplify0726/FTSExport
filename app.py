@@ -103,7 +103,7 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
                 break
                 
             # Filter for your organization
-            if PPON != SECRET_PNON:
+            if PPON != SECRET_PPON:
                 org_releases = [
                 r for r in releases 
                 if (r.get("buyer", {}).get("id") == PPON or 
