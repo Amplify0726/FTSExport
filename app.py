@@ -114,6 +114,7 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
                 all_releases.extend(org_releases)
             else:
                 org_releases = releases
+                all_releases.extend(org_releases)
             
         
             # Check for next page
