@@ -759,6 +759,26 @@ def fetch_and_process_data(from_date, to_date, PPON):
         #Merge summaries for output
         summary = pd.merge(award_summary, closed_summary, on='Range', how='outer')
 
+
+
+        def extract_all_urls(text):
+            if not isinstance(text, str):
+                return [], text
+            urls = re.findall(r'https?://\S+', text)
+            text_no_urls = re.sub(r'https?://\S+', '', text)
+            return urls, text_no_urls.strip()
+        
+        columns_with_possible_urls = ['Notice Description', 'Submission Method']
+
+        for df in [planning_df, tender_df, award_df, lots_df, awards_df]:
+            if not df.empty:
+                for col in columns_with_possible_urls:
+                    if col in df.columns:
+                        # Extract URLs and clean the column
+                        df[[f'{col} URLs', col]] = df[col].apply(lambda x: pd.Series(extract_all_urls(x)))
+                        # Optionally join multiple URLs into a single string
+                        df[f'{col} URLs'] = df[f'{col} URLs'].apply(lambda urls: ', '.join(urls) if isinstance(urls, list) else urls)
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             if not planning_df.empty:
