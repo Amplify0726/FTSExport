@@ -133,7 +133,7 @@ def fetch_releases(from_date=None, to_date=None, PPON=None):
             params['cursor'] = cursor
 
             # Add a small delay between requests to be nice to the API
-            time.sleep(1)
+            time.sleep(0.5)
 
         except requests.Timeout:
             logger.error(f"Request timed out on page {page_count}")
